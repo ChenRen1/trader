@@ -10,6 +10,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveConstraint(
+            model_name='dailymarketquote',
+            name='uniq_daily_market_quote_snapshot_key',
+        ),
         migrations.RemoveField(
             model_name='dailymarketquote',
             name='instrument',

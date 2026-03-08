@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ symbol }} 行情图</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f6f1e8;
+            color: #1f1a14;
+        }
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .title {
+            margin: 0 0 8px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            color: #5b5245;
+            font-size: 14px;
+        }
+        .panel {
+            background: #fffdf8;
+            border: 1px solid #ddd2bf;
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(75, 54, 27, 0.08);
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 18px 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .spot {
+            font-size: 14px;
+            color: #4d463c;
+        }
+        .basis {
+            font-size: 13px;
+            color: #5e5447;
+        }
+        .spot strong {
+            font-size: 24px;
+            color: #16120d;
+            margin-right: 8px;
+        }
+        .chart {
+            width: 100%;
+            height: 560px;
+        }
+        .error {
+            padding: 20px;
+            color: #9f2d20;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <h1 class="title">{{ symbol }} 行情图</h1>
+            <div class="meta">
+                <span>市场：{{ market }}</span>
+                <span>图表：K 线 + 成交量</span>
+                <span id="spot-source">数据源：加载中</span>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-head">
+                <div class="spot" id="spot-summary">正在加载行情...</div>
+                <div class="basis" id="basis-summary"></div>
+            </div>
+            <div id="chart" class="chart"></div>
+            <div id="chart-error" class="error" hidden></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script>
+        const market = "{{ market|escapejs }}";
+        const symbol = "{{ symbol|escapejs }}";
+        const chartContainer = document.getElementById("chart");
+        const errorNode = document.getElementById("chart-error");
+        const spotSummaryNode = document.getElementById("spot-summary");
+        const spotSourceNode = document.getElementById("spot-source");
+        const basisSummaryNode = document.getElementById("basis-summary");
+
+        const chart = LightweightCharts.createChart(chartContainer, {
+            layout: {
+                background: { color: "#fffdf8" },
+                textColor: "#2b241a",
+            },
+            grid: {
+                vertLines: { color: "#efe5d4" },
+                horzLines: { color: "#efe5d4" },
+            },
+            width: chartContainer.clientWidth,
+            height: 560,
+            rightPriceScale: {
+                borderColor: "#d5c7b0",
+            },
+            timeScale: {
+                borderColor: "#d5c7b0",
+                timeVisible: true,
+                secondsVisible: false,
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+        });
+
+        const candleSeries = chart.addCandlestickSeries({
+            upColor: "#c53f3f",
+            downColor: "#2f8f62",
+            borderUpColor: "#c53f3f",
+            borderDownColor: "#2f8f62",
+            wickUpColor: "#c53f3f",
+            wickDownColor: "#2f8f62",
+        });
+
+        const volumeSeries = chart.addHistogramSeries({
+            priceFormat: { type: "volume" },
+            priceScaleId: "",
+            color: "#b08d57",
+        });
+
+        volumeSeries.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.82,
+                bottom: 0,
+            },
+        });
+
+        candleSeries.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.08,
+                bottom: 0.24,
+            },
+        });
+
+        function setError(message) {
+            errorNode.hidden = false;
+            errorNode.textContent = message;
+        }
+
+        function resizeChart() {
+            chart.applyOptions({ width: chartContainer.clientWidth });
+        }
+
+        window.addEventListener("resize", resizeChart);
+
+        fetch(`/market/chart-data/${market}/${symbol}/`)
+            .then(async (response) => {
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || "行情加载失败");
+                }
+                return payload;
+            })
+            .then((payload) => {
+                const bars = payload.bars || [];
+                candleSeries.setData(
+                    bars.map((item) => ({
+                        time: item.time,
+                        open: item.open,
+                        high: item.high,
+                        low: item.low,
+                        close: item.close,
+                    }))
+                );
+                volumeSeries.setData(
+                    bars.map((item) => ({
+                        time: item.time,
+                        value: item.volume || 0,
+                        color: item.close >= item.open ? "#c53f3f88" : "#2f8f6288",
+                    }))
+                );
+                chart.timeScale().fitContent();
+
+                if (payload.spot) {
+                    const spot = payload.spot;
+                    const pct = spot.change_pct == null ? "-" : `${spot.change_pct >= 0 ? "+" : ""}${spot.change_pct.toFixed(2)}%`;
+                    spotSummaryNode.innerHTML = `<strong>${spot.last_price ?? "-"}</strong> 涨跌幅 ${pct}`;
+                    spotSourceNode.textContent = `数据源：${spot.source || "-"}`;
+                } else {
+                    spotSummaryNode.textContent = "未获取到现价，当前仅显示 K 线";
+                    spotSourceNode.textContent = "数据源：-";
+                }
+
+                if (payload.basis) {
+                    const b = payload.basis;
+                    if (b.status === "ok") {
+                        const basisPctText = b.basis_pct == null ? "-" : `${b.basis_pct >= 0 ? "+" : ""}${b.basis_pct.toFixed(2)}%`;
+                        basisSummaryNode.textContent = `基差(${b.future_code}-现货): ${b.basis ?? "-"} (${basisPctText})，期货价 ${b.future_price ?? "-"}，现货价 ${b.spot_price ?? "-"}，交易日 ${b.trade_date || "-"}。`;
+                    } else {
+                        basisSummaryNode.textContent = `基差数据不可用: ${b.error || b.status}`;
+                    }
+                } else {
+                    basisSummaryNode.textContent = "";
+                }
+            })
+            .catch((error) => {
+                setError(error.message || "行情加载失败");
+            });
+    </script>
+</body>
+</html>

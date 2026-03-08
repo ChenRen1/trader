@@ -8,9 +8,7 @@ from django.core.management.base import BaseCommand
 
 from trader.database import (
     Account,
-    DailyMarketIndicator,
-    DailyMarketQuote,
-    DailyMarketSnapshot,
+    DailyMarketReport,
     Fill,
     Instrument,
     InstrumentPrice,
@@ -30,9 +28,7 @@ class Command(BaseCommand):
 
         export_targets = {
             "accounts.csv": Account,
-            "daily_market_snapshots.csv": DailyMarketSnapshot,
-            "daily_market_quotes.csv": DailyMarketQuote,
-            "daily_market_indicators.csv": DailyMarketIndicator,
+            "daily_market_reports.csv": DailyMarketReport,
             "instruments.csv": Instrument,
             "positions.csv": Position,
             "instrument_prices.csv": InstrumentPrice,

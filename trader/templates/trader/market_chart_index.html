@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>行情图入口</title>
+    <style>
+        body { margin: 0; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f6f1e8; color: #1f1a14; }
+        .page { max-width: 980px; margin: 0 auto; padding: 32px 20px 48px; }
+        h1 { margin: 0 0 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+        .item { background: #fffdf8; border: 1px solid #ddd2bf; border-radius: 12px; padding: 14px; }
+        .item a { text-decoration: none; color: #2b241a; font-weight: 700; }
+        .meta { margin-top: 6px; font-size: 12px; color: #6c6256; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>行情图入口</h1>
+        <div class="grid">
+            {% for item in watchlist %}
+            <div class="item">
+                <a href="/market/chart/{{ item.market }}/{{ item.symbol }}/">{{ item.name }}</a>
+                <div class="meta">{{ item.market }} / {{ item.symbol }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

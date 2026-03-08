@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.test import RequestFactory, TestCase
+from django.test import Client, RequestFactory, TestCase
 
 
 class ServiceBackedAdminTests(TestCase):
@@ -125,3 +129,89 @@ class ServiceBackedAdminTests(TestCase):
         assert called["audit_actor"] == "admin"
         assert called["audit_source"] == "admin:instrumentprice"
         assert price.pk is not None
+
+
+class MarketChartViewTests(TestCase):
+    def setUp(self) -> None:
+        self.client = Client()
+
+    def test_market_chart_page_renders(self) -> None:
+        response = self.client.get("/market/chart/CN/600000/")
+
+        assert response.status_code == 200
+        assert "600000 行情图" in response.content.decode("utf-8")
+
+    def test_market_chart_data_returns_json(self) -> None:
+        with (
+            patch("trader.web.views.get_kline") as mocked_kline,
+            patch("trader.web.views.get_spot_price") as mocked_spot,
+        ):
+            mocked_kline.return_value = [
+                {
+                    "date": "2026-03-06",
+                    "open": Decimal("10.10"),
+                    "high": Decimal("10.80"),
+                    "low": Decimal("10.00"),
+                    "close": Decimal("10.50"),
+                    "volume": Decimal("120000"),
+                }
+            ]
+            mocked_spot.return_value = {
+                "last_price": Decimal("10.50"),
+                "prev_close": Decimal("10.20"),
+                "change_pct": Decimal("2.94"),
+                "source": "test.source",
+            }
+
+            response = self.client.get("/market/chart-data/CN/600000/")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["symbol"] == "600000"
+        assert payload["market"] == "CN"
+        assert payload["spot"]["last_price"] == 10.5
+        assert payload["bars"][0]["close"] == 10.5
+        assert payload["basis"] is None
+
+    def test_market_chart_data_includes_basis_for_index(self) -> None:
+        with (
+            patch("trader.web.views.get_kline") as mocked_kline,
+            patch("trader.web.views.get_spot_price") as mocked_spot,
+            patch("trader.web.views.IndexBasisService.calculate_for_spot_symbol") as mocked_basis,
+        ):
+            mocked_kline.return_value = [
+                {
+                    "date": "2026-03-06",
+                    "open": Decimal("4650"),
+                    "high": Decimal("4670"),
+                    "low": Decimal("4630"),
+                    "close": Decimal("4660"),
+                    "volume": Decimal("120000"),
+                }
+            ]
+            mocked_spot.return_value = {
+                "last_price": Decimal("4660.4390"),
+                "prev_close": Decimal("4651.2000"),
+                "change_pct": Decimal("0.20"),
+                "source": "test.source",
+            }
+            mocked_basis.return_value = SimpleNamespace(
+                future_code="IF",
+                future_close=Decimal("4602.54"),
+                spot_price=Decimal("4660.4390"),
+                basis=Decimal("-57.90"),
+                basis_pct=Decimal("-1.24"),
+                trade_date="2026-03-06",
+                future_source="open_interest_weighted",
+                status="ok",
+                error="",
+            )
+
+            response = self.client.get("/market/chart-data/CN/000300/")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["basis"]["future_code"] == "IF"
+        assert payload["basis"]["basis"] == -57.9
+        assert payload["basis"]["basis_pct"] == -1.24
+        assert payload["basis"]["status"] == "ok"
