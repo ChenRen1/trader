@@ -1,0 +1,22 @@
+id,created_at,updated_at,symbol,name,market,exchange,instrument_type,trading_currency,lot_size,tick_size,tradable,status,data_source,notes
+1,2026-03-07 16:18:27.161587+00:00,2026-03-07 16:48:07.421047+00:00,000016,上证50,CN,SSE,指数,CNY,1,,True,启用,market-config,INDEX_50
+2,2026-03-07 16:18:27.162550+00:00,2026-03-07 16:48:07.422563+00:00,000300,沪深300,CN,SSE,指数,CNY,1,,True,启用,market-config,INDEX_300
+5,2026-03-07 16:18:27.164236+00:00,2026-03-07 16:48:07.424489+00:00,000688,科创50,CN,SSE,指数,CNY,1,,True,启用,market-config,STAR_50
+3,2026-03-07 16:18:27.163195+00:00,2026-03-07 16:48:07.423320+00:00,000852,中证1000,CN,SSE,指数,CNY,1,,True,启用,market-config,INDEX_1000
+15,2026-03-07 16:31:46.421787+00:00,2026-03-07 16:31:46.421796+00:00,159919,沪深300,CN,SZSE,ETF,CNY,1,,True,启用,position-init-csv,strategy_tag=manual-main
+4,2026-03-07 16:18:27.163734+00:00,2026-03-07 16:48:07.423953+00:00,399006,创业板指,CN,SZSE,指数,CNY,1,,True,启用,market-config,CHINEXT
+16,2026-03-07 16:31:46.425586+00:00,2026-03-07 16:31:46.425590+00:00,588000,科创50,CN,SSE,ETF,CNY,1,,True,启用,position-init-csv,strategy_tag=manual-main
+18,2026-03-07 16:31:46.431354+00:00,2026-03-07 16:31:46.431361+00:00,600036,招商银行A,CN,SSE,股票,CNY,1,,True,启用,position-init-csv,strategy_tag=manual-main
+17,2026-03-07 16:31:46.428502+00:00,2026-03-07 16:31:46.428506+00:00,601088,中国神华,CN,SSE,股票,CNY,1,,True,启用,position-init-csv,strategy_tag=manual-main
+23,2026-03-07 16:31:46.459601+00:00,2026-03-07 16:31:46.459604+00:00,601919,中远海控,CN,SSE,股票,CNY,1,,True,启用,position-init-csv,strategy_tag=manual-dividend
+11,2026-03-07 16:18:27.166866+00:00,2026-03-07 16:48:07.427960+00:00,881157,证券881157,CN,SZSE,指数,CNY,1,,True,启用,market-config,SECURITIES_881157
+7,2026-03-07 16:18:27.165171+00:00,2026-03-07 16:48:07.425501+00:00,899050,北证50,CN,BSE,指数,CNY,1,,True,启用,market-config,BSE_50
+8,2026-03-07 16:18:27.165607+00:00,2026-03-07 16:48:07.425929+00:00,932000,中证2000,CN,SSE,指数,CNY,1,,True,启用,market-config,CSI_2000
+20,2026-03-07 16:31:46.436982+00:00,2026-03-07 16:31:46.436992+00:00,0981,中芯国际,HK,HKEX,股票,HKD,1,,True,启用,position-init-csv,strategy_tag=manual-main
+22,2026-03-07 16:31:46.442626+00:00,2026-03-07 16:31:46.442631+00:00,1919,中远海控H,HK,HKEX,股票,HKD,1,,True,启用,position-init-csv,strategy_tag=manual-main
+21,2026-03-07 16:31:46.439914+00:00,2026-03-07 16:31:46.439921+00:00,3968,招商银行H,HK,HKEX,股票,HKD,1,,True,启用,position-init-csv,strategy_tag=manual-main
+19,2026-03-07 16:31:46.433782+00:00,2026-03-07 16:31:46.433786+00:00,9988,阿里巴巴-W,HK,HKEX,股票,HKD,1,,True,启用,position-init-csv,strategy_tag=manual-main
+6,2026-03-07 16:18:27.164717+00:00,2026-03-07 16:48:07.425029+00:00,HSTECH,恒生科技指数,HK,HKEX,指数,HKD,1,,True,启用,market-config,HSTECH
+10,2026-03-07 16:18:27.166442+00:00,2026-03-07 16:48:07.427506+00:00,CN10Y,中国国债十年期,MACRO,OTC,利率,CNY,1,,False,启用,market-config,CN10Y
+24,2026-03-07 16:48:07.426893+00:00,2026-03-07 16:48:07.426901+00:00,HKDCNH,港币兑人民币,MACRO,OTC,外汇,CNY,1,,False,启用,market-config,HKDCNH
+9,2026-03-07 16:18:27.166024+00:00,2026-03-07 16:48:07.426340+00:00,USDCNH,离岸人民币汇率,MACRO,OTC,外汇,CNH,1,,False,启用,market-config,USDCNH
