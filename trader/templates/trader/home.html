@@ -3,22 +3,442 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Trader</title>
+    <title>资金与持仓总览</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
     <style>
-        body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f7f4ee; color: #201a14; }
-        .wrap { max-width: 900px; margin: 0 auto; padding: 36px 20px; }
-        .card { background: #fffdf8; border: 1px solid #ded2bf; border-radius: 16px; padding: 24px; }
-        h1 { margin: 0 0 8px; }
-        p { margin: 0 0 16px; color: #5a5146; }
-        a { color: #5b3a1f; text-decoration: none; font-weight: 600; }
+        :root {
+            --td-page-bg: #f5f7fb;
+            --td-panel-border: #e6ebf2;
+            --td-ink-soft: #667085;
+        }
+        body {
+            background: linear-gradient(180deg, #f7f9fc 0%, #f3f5f9 100%);
+        }
+        .dashboard-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: -0.03em;
+        }
+        .hero p {
+            margin: 6px 0 0;
+            color: var(--td-ink-soft);
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .metric-card,
+        .panel-card {
+            border: 1px solid var(--td-panel-border);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(6px);
+        }
+        .metric-title {
+            color: var(--td-ink-soft);
+            font-size: 0.82rem;
+            margin-bottom: 8px;
+        }
+        .metric-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+        .metric-sub {
+            margin-top: 10px;
+            color: var(--td-ink-soft);
+            font-size: 0.84rem;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .section-subtitle {
+            color: var(--td-ink-soft);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+        .table-modern th {
+            color: var(--td-ink-soft);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .table-modern td {
+            border-bottom: 1px solid #f3f5f7;
+            vertical-align: middle;
+        }
+        .table-modern .pnl-up {
+            color: #c0392b !important;
+            font-weight: 600;
+        }
+        .table-modern .pnl-down {
+            color: #157347 !important;
+            font-weight: 600;
+        }
+        .table-modern .pnl-flat {
+            color: #6b7280 !important;
+            font-weight: 600;
+        }
+        .position-link {
+            color: inherit;
+            text-decoration: none;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .compact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .summary-block {
+            white-space: pre-line;
+            color: #3d4654;
+            line-height: 1.75;
+            font-size: 0.92rem;
+        }
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .summary-card {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: auto;
+        }
+        .macro-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+        .macro-meta {
+            color: var(--td-ink-soft);
+            font-size: 0.82rem;
+            margin-top: 6px;
+        }
+        .summary-section {
+            margin-top: 20px;
+        }
+        .summary-section:first-of-type {
+            margin-top: 16px;
+        }
+        .summary-section-title {
+            color: #344054;
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 992px) {
+            .stat-grid,
+            .compact-grid,
+            .macro-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        @media (max-width: 640px) {
+            .stat-grid,
+            .compact-grid,
+            .macro-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-shell {
+                padding: 24px 14px 36px;
+            }
+            .metric-value {
+                font-size: 1.35rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <div class="card">
-            <h1>交易系统</h1>
-            <p>已启用行情图与基差计算。</p>
-            <a href="/market/chart/">进入行情图页面</a>
+    <div class="dashboard-shell">
+        <div class="hero">
+            <div>
+                <h1>资金与持仓总览</h1>
+                <p>统一查看账户总资产、资金占用和当前持仓分布。</p>
+            </div>
+            <div class="hero-actions">
+                <a class="btn btn-outline-secondary" href="/market/chart/">行情图</a>
+                <a class="btn btn-dark" href="/admin/">管理后台</a>
+            </div>
+        </div>
+
+        <div class="stat-grid mb-4">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <div class="metric-title">账户总资产</div>
+                    <div class="metric-value">{{ summary.total_equity|floatformat:2 }}</div>
+                    <div class="metric-sub">账户数 {{ summary.account_count }}</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="card-body">
+                    <div class="metric-title">持仓市值</div>
+                    <div class="metric-value">{{ summary.total_market_value|floatformat:2 }}</div>
+                    <div class="metric-sub">标的数 {{ summary.instrument_count }} / 持仓数 {{ summary.position_count }}</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="card-body">
+                    <div class="metric-title">可用资金</div>
+                    <div class="metric-value">{{ summary.available_cash|floatformat:2 }}</div>
+                    <div class="metric-sub">冻结 {{ summary.frozen_cash|floatformat:2 }}</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="card-body">
+                    <div class="metric-title">未实现盈亏</div>
+                    <div class="metric-value">{{ summary.total_unrealized_pnl|floatformat:2 }}</div>
+                    <div class="metric-sub">负债 {{ summary.liability|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card panel-card mb-4">
+            <div class="card-body">
+                <div class="section-title">市场摘要与汇率利率监控</div>
+                <div class="section-subtitle">
+                    {% if latest_report %}
+                    {{ latest_report.report_date }} 生成，直接读取数据库中的最新现价和日报结果
+                    {% else %}
+                    直接读取数据库中的最新现价
+                    {% endif %}
+                </div>
+
+                {% if latest_report %}
+                {% if daily_summary.basis_calculated_at or daily_summary.basis_cards %}
+                <div class="summary-section">
+                    <div class="summary-section-title">股指期货基差</div>
+                    {% if daily_summary.basis_calculated_at %}
+                    <div class="macro-meta">计算时间 {{ daily_summary.basis_calculated_at }}</div>
+                    {% endif %}
+                    <div class="macro-grid mt-3">
+                        {% for item in daily_summary.basis_cards %}
+                        <div class="border rounded-3 p-3 summary-card">
+                            <div class="text-secondary small">{{ item.title }}</div>
+                            <div class="macro-value">{{ item.value }}</div>
+                            <div class="macro-meta">{{ item.detail }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if daily_summary.conclusion_cards %}
+                <div class="summary-section">
+                    <div class="summary-section-title">核心结论</div>
+                    <div class="macro-grid">
+                        {% for item in daily_summary.conclusion_cards %}
+                        <div class="border rounded-3 p-3 summary-card">
+                            <div class="text-secondary small">{{ item.title }}</div>
+                            <div class="macro-value">{{ item.value }}</div>
+                            <div class="macro-meta">{{ item.detail }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if daily_summary.hs300_intro or daily_summary.hs300_cards %}
+                <div class="summary-section">
+                    <div class="summary-section-title">行业统计</div>
+                    {% if daily_summary.hs300_intro %}
+                    <div class="macro-meta">{{ daily_summary.hs300_intro }}</div>
+                    {% endif %}
+                    <div class="macro-grid mt-3">
+                        {% for item in daily_summary.hs300_cards %}
+                        <div class="border rounded-3 p-3 summary-card">
+                            <div class="text-secondary small">{{ item.sector }}</div>
+                            <div class="macro-value">{{ item.mean }}</div>
+                            <div class="macro-meta">中位数 {{ item.median }}</div>
+                            <div class="macro-meta">样本 {{ item.sample }}</div>
+                            <div class="macro-meta">上涨 {{ item.up }} / 下跌 {{ item.down }} / 平盘 {{ item.flat }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if daily_summary.sector_distribution_cards %}
+                <div class="summary-section">
+                    <div class="summary-section-title">证券板块涨跌分布</div>
+                    <div class="macro-grid">
+                        {% for item in daily_summary.sector_distribution_cards %}
+                        <div class="border rounded-3 p-3 summary-card">
+                            <div class="text-secondary small">{{ item.title }}</div>
+                            <div class="macro-value">{{ item.value }}</div>
+                            <div class="macro-meta">{{ item.detail }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="summary-section">
+                    <div class="summary-section-title">汇率与利率监控</div>
+                    <div class="macro-grid">
+                        {% for item in macro_cards %}
+                        <div class="border rounded-3 p-3 summary-card">
+                            <div class="text-secondary small">{{ item.name }}</div>
+                            <div class="macro-value">
+                                {% if item.last_price is not None %}
+                                {{ item.last_price|floatformat:4 }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </div>
+                            <div class="macro-meta">{{ item.symbol }} / {{ item.market }}</div>
+                            <div class="macro-meta">
+                                {% if item.prev_close is not None %}
+                                昨收 {{ item.prev_close|floatformat:4 }}
+                                {% else %}
+                                昨收 -
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if not daily_summary.conclusion_cards and not daily_summary.sector_distribution_cards and not daily_summary.hs300_cards and not daily_summary.basis_cards %}
+                <div class="summary-block mt-3">{{ latest_report.markdown_content }}</div>
+                {% endif %}
+                {% else %}
+                <div class="summary-block mt-3">还没有生成每日市场报告。</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card panel-card mb-4">
+            <div class="card-header border-0 pb-0">
+                <div>
+                    <h2 class="section-title">账户概览</h2>
+                    <div class="section-subtitle">按账户查看资金与持仓汇总</div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter table-modern card-table">
+                    <thead>
+                        <tr>
+                            <th>账户</th>
+                            <th>类型</th>
+                            <th>基础币种</th>
+                            <th class="text-end">可用资金</th>
+                            <th class="text-end">持仓市值</th>
+                            <th class="text-end">未实现盈亏</th>
+                            <th class="text-end">总资产</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in accounts %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ account.account_code }}</div>
+                                <div class="text-secondary small">{{ account.account_name }}</div>
+                            </td>
+                            <td>{{ account.account_type }}</td>
+                            <td>{{ account.base_currency }}</td>
+                            <td class="text-end">{{ account.available_cash|floatformat:2 }}</td>
+                            <td class="text-end">{{ account.total_market_value|floatformat:2 }}</td>
+                            <td class="text-end {% if account.total_unrealized_pnl > 0 %}pnl-up{% elif account.total_unrealized_pnl < 0 %}pnl-down{% else %}pnl-flat{% endif %}">
+                                {{ account.total_unrealized_pnl|floatformat:2 }}
+                            </td>
+                            <td class="text-end fw-semibold">{{ account.total_equity|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-secondary py-4">当前没有账户数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card panel-card">
+            <div class="card-header border-0 pb-0">
+                <div>
+                    <h2 class="section-title">持仓总览</h2>
+                    <div class="section-subtitle">按标的汇总持仓，并按总市值排序</div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter table-modern card-table">
+                    <thead>
+                        <tr>
+                            <th>标的</th>
+                            <th class="text-end">总数量</th>
+                            <th class="text-end">总成本</th>
+                            <th class="text-end">总市值</th>
+                            <th class="text-end">仓位占比</th>
+                            <th class="text-end">未实现盈亏</th>
+                            <th class="text-end">盈亏比例</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in position_overview %}
+                        <tr>
+                            <td>
+                                <a class="position-link" href="/market/chart/{{ item.instrument__market }}/{{ item.instrument__symbol }}/">
+                                    <div class="fw-semibold">{{ item.instrument__symbol }}</div>
+                                    <div class="text-secondary small">{{ item.instrument__name }}</div>
+                                </a>
+                            </td>
+                            <td class="text-end">{{ item.total_quantity|floatformat:2 }}</td>
+                            <td class="text-end">{{ item.total_cost_basis|floatformat:2 }}</td>
+                            <td class="text-end fw-semibold">{{ item.total_market_value|floatformat:2 }}</td>
+                            <td class="text-end">
+                                {% if item.weight_ratio is not None %}
+                                {{ item.weight_ratio|floatformat:2 }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="text-end {% if item.total_unrealized_pnl > 0 %}pnl-up{% elif item.total_unrealized_pnl < 0 %}pnl-down{% else %}pnl-flat{% endif %}">
+                                {{ item.total_unrealized_pnl|floatformat:2 }}
+                            </td>
+                            <td class="text-end {% if item.total_unrealized_pnl > 0 %}pnl-up{% elif item.total_unrealized_pnl < 0 %}pnl-down{% else %}pnl-flat{% endif %}">
+                                {% if item.pnl_ratio is not None %}
+                                {{ item.pnl_ratio|floatformat:2 }}%
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-secondary py-4">当前没有持仓数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </body>

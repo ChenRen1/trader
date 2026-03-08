@@ -12,6 +12,8 @@ from django.utils import timezone
 from trader.database.models import Account, Instrument, InstrumentPrice, Position
 from trader.database.services.fill_sync import FillSyncService
 from trader.market.source import get_spot_price
+from trader.risk_management import PositionRiskMonitor
+from trader.strategy.services import AnnualReportDividendYieldService
 
 
 class PriceSyncService:
@@ -44,6 +46,7 @@ class PriceSyncService:
             "prev_close": quote.get("prev_close"),
             "source": source,
         }
+        payload.update(PriceSyncService._build_dividend_payload(instrument=instrument, quote=quote))
 
         from trader.database.services.crud.instrument_price import InstrumentPriceService
 
@@ -66,6 +69,38 @@ class PriceSyncService:
             audit_source=source,
             **payload,
         )
+
+    @staticmethod
+    def _build_dividend_payload(*, instrument: Instrument, quote: dict[str, Any]) -> dict[str, Any]:
+        if not (
+            instrument.market == Instrument.Market.CN
+            and instrument.instrument_type == Instrument.InstrumentType.STOCK
+            and instrument.is_high_dividend
+        ):
+            return {}
+        raw_price = quote.get("last_price")
+        if raw_price in {None, ""}:
+            return {}
+        try:
+            last_price = Decimal(str(raw_price))
+        except Exception:
+            return {}
+
+        result = AnnualReportDividendYieldService.compute_for_symbol_with_price(
+            symbol=instrument.symbol,
+            name=instrument.name,
+            last_price=last_price,
+        )
+        return {
+            "annual_cash_dividend_per_10": result.cash_dividend_per_10,
+            "annual_dividend_per_share": result.dividend_per_share,
+            "annual_dividend_yield_pct": (
+                (result.dividend_yield * Decimal("100")).quantize(Decimal("0.0001"))
+                if result.dividend_yield is not None
+                else None
+            ),
+            "annual_dividend_report": result.annual_report or "",
+        }
 
     @staticmethod
     def update_spot_prices(*, instruments: list[Instrument] | None = None) -> dict[str, object]:
@@ -107,7 +142,7 @@ class PriceSyncService:
 
     @staticmethod
     @transaction.atomic
-    def sync_instrument(instrument: Instrument) -> None:
+    def sync_instrument(instrument: Instrument) -> list[object]:
         """按标的重算全部关联持仓和账户。"""
         positions = list(
             Position.objects.filter(instrument=instrument)
@@ -123,6 +158,8 @@ class PriceSyncService:
             account = Account.objects.filter(id=account_id).first()
             if account is not None:
                 FillSyncService.recalculate_account(account)
+
+        return PositionRiskMonitor().evaluate_model_positions(positions)
 
     @staticmethod
     def _recalculate_position_mark_to_market(position: Position) -> None:

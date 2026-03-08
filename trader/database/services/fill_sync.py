@@ -79,6 +79,7 @@ class FillSyncService:
             position.cost_basis = Decimal("0")
             position.market_value = Decimal("0")
             position.unrealized_pnl = Decimal("0")
+            position.position_ratio = Decimal("0")
             position.status = Position.Status.CLOSED
             position.opened_at = None
             position.closed_at = None
@@ -120,6 +121,7 @@ class FillSyncService:
         position.cost_basis = cost_basis
         position.market_value = market_value
         position.unrealized_pnl = unrealized_pnl
+        position.position_ratio = Decimal("0")
         position.status = Position.Status.OPEN if quantity != Decimal("0") else Position.Status.CLOSED
         position.opened_at = opened_at if quantity != Decimal("0") or opened_at else None
         position.closed_at = closed_at if quantity == Decimal("0") else None
@@ -245,8 +247,21 @@ class FillSyncService:
                 "updated_at",
             ]
         )
+        FillSyncService._recalculate_position_ratios(account, total_equity=total_equity)
 
     @staticmethod
     def recalculate_account(account: Account) -> None:
         """对外暴露账户重算入口。"""
         FillSyncService._recalculate_account(account)
+
+    @staticmethod
+    def _recalculate_position_ratios(account: Account, *, total_equity: Decimal) -> None:
+        """按账户总资产回写持仓占比。"""
+        denominator = Decimal(str(total_equity))
+        positions = list(account.positions.all())
+        for position in positions:
+            ratio = Decimal("0")
+            if denominator != Decimal("0"):
+                ratio = (abs(Decimal(str(position.market_value))) / denominator).quantize(EIGHT_DP)
+            position.position_ratio = ratio
+            position.save(update_fields=["position_ratio", "updated_at"])

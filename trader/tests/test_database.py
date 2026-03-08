@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from decimal import Decimal
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -497,7 +498,7 @@ class PriceSyncServiceTests(TestCase):
             base_currency=Account.Currency.CNY,
         )
         instrument = Instrument.objects.create(
-            symbol="159919",
+            symbol="TEST159919",
             name="沪深300ETF",
             market=Instrument.Market.CN,
             exchange=Instrument.Exchange.SZSE,
@@ -533,7 +534,54 @@ class PriceSyncServiceTests(TestCase):
         assert position.available_quantity == position.available_quantity.__class__("20000.00000000")
         assert position.market_value == position.market_value.__class__("97300.0000")
         assert position.unrealized_pnl == position.unrealized_pnl.__class__("2880.0000")
+        assert position.position_ratio == position.position_ratio.__class__("1.00000000")
         assert account.total_market_value == account.total_market_value.__class__("97300.0000")
+
+    def test_update_instrument_spot_price_includes_dividend_fields_for_high_dividend_stock(self) -> None:
+        from trader.database import Instrument, PriceSyncService
+
+        instrument = Instrument.objects.create(
+            symbol="600036",
+            name="招商银行",
+            market=Instrument.Market.CN,
+            exchange=Instrument.Exchange.SSE,
+            instrument_type=Instrument.InstrumentType.STOCK,
+            trading_currency=Instrument.Currency.CNY,
+            is_high_dividend=True,
+        )
+        quoted_at = timezone.now()
+        with (
+            patch(
+                "trader.database.services.price_sync.get_spot_price",
+                return_value={
+                    "symbol": "600036",
+                    "market": "CN",
+                    "last_price": "39.2000",
+                    "prev_close": "39.1500",
+                    "quoted_at": quoted_at,
+                    "source": "test.provider",
+                },
+            ),
+            patch(
+                "trader.database.services.price_sync.AnnualReportDividendYieldService.compute_for_symbol_with_price",
+                return_value=type(
+                    "Result",
+                    (),
+                    {
+                        "cash_dividend_per_10": Decimal("20.0"),
+                        "dividend_per_share": Decimal("2.0000"),
+                        "dividend_yield": Decimal("0.0510"),
+                        "annual_report": "2024年报",
+                    },
+                )(),
+            ),
+        ):
+            price = PriceSyncService.update_instrument_spot_price(instrument)
+
+        assert price.annual_cash_dividend_per_10 == Decimal("20.0000")
+        assert price.annual_dividend_per_share == Decimal("2.0000")
+        assert price.annual_dividend_yield_pct == Decimal("5.1000")
+        assert price.annual_dividend_report == "2024年报"
 
 
 class CrudServiceTests(TestCase):

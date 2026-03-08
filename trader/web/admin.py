@@ -84,9 +84,9 @@ class AccountAdmin(ServiceBackedAdmin):
 @admin.register(Instrument)
 class InstrumentAdmin(ServiceBackedAdmin):
     service = InstrumentService
-    list_display = ("symbol", "name", "market", "exchange", "instrument_type", "trading_currency", "status")
+    list_display = ("symbol", "name", "market", "exchange", "instrument_type", "is_high_dividend", "trading_currency", "status")
     search_fields = ("symbol", "name")
-    list_filter = ("market", "exchange", "instrument_type", "status")
+    list_filter = ("market", "exchange", "instrument_type", "is_high_dividend", "status")
 
 
 @admin.register(Position)

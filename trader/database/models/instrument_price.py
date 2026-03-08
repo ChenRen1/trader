@@ -27,6 +27,28 @@ class InstrumentPrice(TimestampedModel):
     close_price = models.DecimalField("收盘价", max_digits=20, decimal_places=4, null=True, blank=True)
     last_price = models.DecimalField("最新价", max_digits=20, decimal_places=4, null=True, blank=True)
     prev_close = models.DecimalField("昨收价", max_digits=20, decimal_places=4, null=True, blank=True)
+    annual_cash_dividend_per_10 = models.DecimalField(
+        "年报分红(每10股)",
+        max_digits=20,
+        decimal_places=4,
+        null=True,
+        blank=True,
+    )
+    annual_dividend_per_share = models.DecimalField(
+        "年报每股分红",
+        max_digits=20,
+        decimal_places=4,
+        null=True,
+        blank=True,
+    )
+    annual_dividend_yield_pct = models.DecimalField(
+        "年报股息率(%)",
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+    )
+    annual_dividend_report = models.CharField("年报报告期", max_length=32, blank=True)
     volume = models.DecimalField("成交量", max_digits=24, decimal_places=8, default=0)
     turnover = models.DecimalField("成交额", max_digits=24, decimal_places=4, default=0)
     source = models.CharField("数据来源", max_length=64, blank=True)
@@ -45,4 +67,3 @@ class InstrumentPrice(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.instrument.symbol} {self.bar_type} {self.priced_at}"
-

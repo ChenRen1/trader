@@ -49,6 +49,7 @@ class Instrument(TimestampedModel):
     lot_size = models.PositiveIntegerField("最小交易单位", default=1)
     tick_size = models.DecimalField("最小变动价位", max_digits=20, decimal_places=4, null=True, blank=True)
     tradable = models.BooleanField("可交易", default=True)
+    is_high_dividend = models.BooleanField("高股息标的", default=False)
     status = models.CharField("状态", max_length=16, choices=Status.choices, default=Status.ACTIVE)
     data_source = models.CharField("数据源", max_length=64, blank=True)
     notes = models.TextField("备注", blank=True)
@@ -67,4 +68,3 @@ class Instrument(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.symbol}.{self.market}"
-

@@ -36,6 +36,7 @@ class Position(TimestampedModel):
     cost_basis = models.DecimalField("持仓成本", max_digits=20, decimal_places=4, default=0)
     market_value = models.DecimalField("持仓市值", max_digits=20, decimal_places=4, default=0)
     unrealized_pnl = models.DecimalField("未实现盈亏", max_digits=20, decimal_places=4, default=0)
+    position_ratio = models.DecimalField("持仓占比", max_digits=12, decimal_places=8, default=0)
     pricing_currency = models.CharField("计价币种", max_length=8, choices=Instrument.Currency.choices)
     status = models.CharField("状态", max_length=16, choices=Status.choices, default=Status.OPEN)
     opened_at = models.DateTimeField("建仓时间", null=True, blank=True)
@@ -50,4 +51,3 @@ class Position(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.account.account_code} - {self.instrument.symbol}"
-
